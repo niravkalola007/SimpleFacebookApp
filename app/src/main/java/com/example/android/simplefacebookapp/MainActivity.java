@@ -50,7 +50,7 @@ public class MainActivity extends FragmentActivity {
 
     private UiLifecycleHelper uiHelper;
 
-    private static final List<String> PERMISSIONS = Arrays.asList("publish_actions");
+    private static final List<String> PERMISSIONS = Arrays.asList("publish_actions","");
 
     private static String message = "Sample status posted from android app";
     Bitmap bmp = null;
@@ -79,7 +79,7 @@ public class MainActivity extends FragmentActivity {
                         protected Void doInBackground(Void... params) {
                             try {
                                 URL image_value = new URL("https://graph.facebook.com/"+ user.getId()+ "/picture?type=large");
-                                    Log.e("image_value:",image_value+"");
+                                Log.e("image_value:",image_value+"");
                                 try {
                                     bmp = BitmapFactory.decodeStream(image_value.openConnection().getInputStream());
                                 } catch (IOException e) {
@@ -112,23 +112,50 @@ public class MainActivity extends FragmentActivity {
             @Override
             public void onClick(View view) {
 //                postImage();
+                Bitmap photo= BitmapFactory.decodeResource(getResources(),
+                        R.drawable.in); //This is the bitmap of your photo
+                ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                photo.compress(Bitmap.CompressFormat.PNG, 100, stream);
+                byte[] byteArray = stream.toByteArray();
+
                 Bundle params = new Bundle();
-                params.putString("url", "https://camo.githubusercontent.com/2e5c9d7b6239afb43ade3e52e5156e33bf63dbc5/687474703a2f2f6934362e74696e797069632e636f6d2f32316b797769742e706e67");
+                params.putString("message", "This is a test message");
+                params.putByteArray("attachment",byteArray);
 /* make the API call */
                 new Request(
                         Session.getActiveSession(),
-                        "/532383143569383/photos",
+                        "/1559395644274660/feed",
                         params,
                         HttpMethod.POST,
                         new Request.Callback() {
                             public void onCompleted(Response response) {
             /* handle the result */
-
                                 Log.e("response",response+"");
-
                             }
                         }
                 ).executeAsync();
+
+
+//                Bundle params = new Bundle();
+//                params.putString("message", "picture caption");
+//                params.putString("url", "https://camo.githubusercontent.com/2e5c9d7b6239afb43ade3e52e5156e33bf63dbc5/687474703a2f2f6934362e74696e797069632e636f6d2f32316b797769742e706e67");
+///* make the API call */
+//                new Request(
+//                        Session.getActiveSession(),
+////                        253451068097152
+////                        1559395644274660
+//                        "/253451068097152/photos",
+//                        params,
+//                        HttpMethod.POST,
+//                        new Request.Callback() {
+//                            public void onCompleted(Response response) {
+//            /* handle the result */
+//
+//                                Log.e("response",response+"");
+//
+//                            }
+//                        }
+//                ).executeAsync();
             }
         });
 
@@ -197,51 +224,51 @@ public class MainActivity extends FragmentActivity {
         }
     }
 
-    public void postVideo() {
-        File file=new File(Environment.getExternalStorageDirectory()+"/Download/testing.mp4");
-        try {
-            Request videoRequest = Request.newUploadVideoRequest(Session.getActiveSession(), file, new Request.Callback() {
+//    public void postVideo() {
+//        File file=new File(Environment.getExternalStorageDirectory()+"/Download/testing.mp4");
+//        try {
+//            Request videoRequest = Request.newUploadVideoRequest(Session.getActiveSession(), file, new Request.Callback() {
+//
+//                @Override
+//                public void onCompleted(Response response) {
+//                    // TODO Auto-generated method stub
+//
+//                    if(response.getError()==null)
+//                    {
+//                        Toast.makeText(MainActivity.this, "Video Shared Successfully", Toast.LENGTH_SHORT).show();
+//                    }
+//                    else
+//                    {
+//                        Toast.makeText(MainActivity.this, response.getError().getErrorMessage(), Toast.LENGTH_SHORT).show();
+//                    }
+//                }
+//            });
+//            videoRequest.executeAsync();
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//
+//        }
+//    }
 
-                @Override
-                public void onCompleted(Response response) {
-                    // TODO Auto-generated method stub
 
-                    if(response.getError()==null)
-                    {
-                        Toast.makeText(MainActivity.this, "Video Shared Successfully", Toast.LENGTH_SHORT).show();
-                    }
-                    else
-                    {
-                        Toast.makeText(MainActivity.this, response.getError().getErrorMessage(), Toast.LENGTH_SHORT).show();
-                    }
-                }
-            });
-            videoRequest.executeAsync();
-        } catch (Exception e) {
-            e.printStackTrace();
-
-        }
-    }
-
-
-    public void postStatusMessage() {
-        if (checkPermissions()) {
-            Request request = Request.newStatusUpdateRequest(
-                    Session.getActiveSession(), message,
-                    new Request.Callback() {
-                        @Override
-                        public void onCompleted(Response response) {
-                            if (response.getError() == null)
-                                Toast.makeText(MainActivity.this,
-                                        "Status updated successfully",
-                                        Toast.LENGTH_LONG).show();
-                        }
-                    });
-            request.executeAsync();
-        } else {
-            requestPermissions();
-        }
-    }
+//    public void postStatusMessage() {
+//        if (checkPermissions()) {
+//            Request request = Request.newStatusUpdateRequest(
+//                    Session.getActiveSession(), message,
+//                    new Request.Callback() {
+//                        @Override
+//                        public void onCompleted(Response response) {
+//                            if (response.getError() == null)
+//                                Toast.makeText(MainActivity.this,
+//                                        "Status updated successfully",
+//                                        Toast.LENGTH_LONG).show();
+//                        }
+//                    });
+//            request.executeAsync();
+//        } else {
+//            requestPermissions();
+//        }
+//    }
 
     public boolean checkPermissions() {
         Session s = Session.getActiveSession();
@@ -280,21 +307,21 @@ public class MainActivity extends FragmentActivity {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-//        uiHelper.onActivityResult(requestCode, resultCode, data);
-        Session session = Session.getActiveSession();
-
-        if (session != null) {
-
-            // Check for publish permissions
-            List<String> permissions = session.getPermissions();
-            if (!isSubsetOf(PERMISSIONS, permissions)) {
-                pendingPublishReauthorization = true;
-                Session.NewPermissionsRequest newPermissionsRequest = new Session.NewPermissionsRequest(
-                        this, PERMISSIONS);
-                session.requestNewPublishPermissions(newPermissionsRequest);
-                return;
-            }
-        }
+        uiHelper.onActivityResult(requestCode, resultCode, data);
+//        Session session = Session.getActiveSession();
+//
+//        if (session != null) {
+//
+//            // Check for publish permissions
+//            List<String> permissions = session.getPermissions();
+//            if (!isSubsetOf(PERMISSIONS, permissions)) {
+//                pendingPublishReauthorization = true;
+//                Session.NewPermissionsRequest newPermissionsRequest = new Session.NewPermissionsRequest(
+//                        this, PERMISSIONS);
+//                session.requestNewPublishPermissions(newPermissionsRequest);
+//                return;
+//            }
+//        }
     }
 
     private boolean isSubsetOf(Collection<String> subset,
