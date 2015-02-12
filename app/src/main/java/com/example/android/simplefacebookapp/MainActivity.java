@@ -10,9 +10,12 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
@@ -47,13 +50,9 @@ public class MainActivity extends FragmentActivity {
     private boolean pendingPublishReauthorization = false;
 
     private TextView userName;
-
+    ProgressDialog progressDialog;
     private UiLifecycleHelper uiHelper;
 
-    private static final List<String> PERMISSIONS = Arrays.asList("publish_actions","");
-
-    private static String message = "Sample status posted from android app";
-    Bitmap bmp = null;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -112,28 +111,59 @@ public class MainActivity extends FragmentActivity {
             @Override
             public void onClick(View view) {
 //                postImage();
-                Bitmap photo= BitmapFactory.decodeResource(getResources(),
+                try {
+                 progressDialog=new ProgressDialog(MainActivity.this);
+                progressDialog.setMessage("Uploading video...");
+                progressDialog.setCancelable(false);
+                progressDialog.show();
+                Bitmap photo = BitmapFactory.decodeResource(getResources(),
                         R.drawable.in); //This is the bitmap of your photo
                 ByteArrayOutputStream stream = new ByteArrayOutputStream();
                 photo.compress(Bitmap.CompressFormat.PNG, 100, stream);
                 byte[] byteArray = stream.toByteArray();
 
-                Bundle params = new Bundle();
-                params.putString("message", "This is a test message");
-                params.putByteArray("attachment",byteArray);
-/* make the API call */
-                new Request(
-                        Session.getActiveSession(),
-                        "/1559395644274660/feed",
-                        params,
-                        HttpMethod.POST,
-                        new Request.Callback() {
-                            public void onCompleted(Response response) {
-            /* handle the result */
-                                Log.e("response",response+"");
-                            }
-                        }
-                ).executeAsync();
+                Uri uri = Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.testfile);
+
+                InputStream iStream = getContentResolver().openInputStream(uri);
+                byte[] inputData = getBytes(iStream);
+
+
+                final Session sessionfb = Session.getActiveSession();
+
+                List<String> permissions = sessionfb.getPermissions();
+                if (!permissions.contains("publish_actions")) {
+
+                    Session.NewPermissionsRequest newPermissionsRequest = new Session.NewPermissionsRequest(
+                            MainActivity.this, Arrays.asList("publish_actions"))
+                            ;
+                    sessionfb.requestNewPublishPermissions(newPermissionsRequest);
+
+                }
+
+
+                    Bundle parameters = new Bundle();
+//                    parameters.putString("description", "Hi nirav sample video");
+//                    parameters.putString("description", "test");
+
+                    parameters.putByteArray("source", inputData);
+//                    parameters.putByteArray("source", byteArray);
+
+
+                    new Request(sessionfb, "me/videos", parameters, HttpMethod.POST,
+                            new Request.Callback() {
+                                public void onCompleted(Response response) {
+                                    progressDialog.dismiss();
+                                    Log.e("facebook post response",
+                                            response.toString());
+//                                    postVideo();
+                                }
+                            }).executeAsync();
+
+                } catch (Exception e){
+                    e.printStackTrace();
+                    Log.e("error",e+"");
+                    progressDialog.dismiss();
+                }
 
 
 //                Bundle params = new Bundle();
@@ -186,6 +216,19 @@ public class MainActivity extends FragmentActivity {
         buttonsEnabled(false);
     }
 
+
+    public byte[] getBytes(InputStream inputStream) throws IOException {
+        ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
+        int bufferSize = 1024;
+        byte[] buffer = new byte[bufferSize];
+
+        int len = 0;
+        while ((len = inputStream.read(buffer)) != -1) {
+            byteBuffer.write(buffer, 0, len);
+        }
+        return byteBuffer.toByteArray();
+    }
+
     private Session.StatusCallback statusCallback = new Session.StatusCallback() {
         @Override
         public void call(Session session, SessionState state,
@@ -205,24 +248,24 @@ public class MainActivity extends FragmentActivity {
         updateStatusBtn.setEnabled(isEnabled);
     }
 
-    public void postImage() {
-        if (checkPermissions()) {
-            Bitmap img = BitmapFactory.decodeResource(getResources(),
-                    R.drawable.in);
-            Request uploadRequest = Request.newUploadPhotoRequest(
-                    Session.getActiveSession(), img, new Request.Callback() {
-                        @Override
-                        public void onCompleted(Response response) {
-                            Toast.makeText(MainActivity.this,
-                                    "Photo uploaded successfully",
-                                    Toast.LENGTH_LONG).show();
-                        }
-                    });
-            uploadRequest.executeAsync();
-        } else {
-            requestPermissions();
-        }
-    }
+//    public void postImage() {
+//        if (checkPermissions()) {
+//            Bitmap img = BitmapFactory.decodeResource(getResources(),
+//                    R.drawable.in);
+//            Request uploadRequest = Request.newUploadPhotoRequest(
+//                    Session.getActiveSession(), img, new Request.Callback() {
+//                        @Override
+//                        public void onCompleted(Response response) {
+//                            Toast.makeText(MainActivity.this,
+//                                    "Photo uploaded successfully",
+//                                    Toast.LENGTH_LONG).show();
+//                        }
+//                    });
+//            uploadRequest.executeAsync();
+//        } else {
+//            requestPermissions();
+//        }
+//    }
 
 //    public void postVideo() {
 //        File file=new File(Environment.getExternalStorageDirectory()+"/Download/testing.mp4");
@@ -270,20 +313,20 @@ public class MainActivity extends FragmentActivity {
 //        }
 //    }
 
-    public boolean checkPermissions() {
-        Session s = Session.getActiveSession();
-        if (s != null) {
-            return s.getPermissions().contains("publish_actions");
-        } else
-            return false;
-    }
-
-    public void requestPermissions() {
-        Session s = Session.getActiveSession();
-        if (s != null)
-            s.requestNewPublishPermissions(new Session.NewPermissionsRequest(
-                    this, PERMISSIONS));
-    }
+//    public boolean checkPermissions() {
+//        Session s = Session.getActiveSession();
+//        if (s != null) {
+//            return s.getPermissions().contains("publish_actions");
+//        } else
+//            return false;
+//    }
+//
+//    public void requestPermissions() {
+//        Session s = Session.getActiveSession();
+//        if (s != null)
+//            s.requestNewPublishPermissions(new Session.NewPermissionsRequest(
+//                    this, PERMISSIONS));
+//    }
 
     @Override
     public void onResume() {
@@ -324,15 +367,15 @@ public class MainActivity extends FragmentActivity {
 //        }
     }
 
-    private boolean isSubsetOf(Collection<String> subset,
-                               Collection<String> superset) {
-        for (String string : subset) {
-            if (!superset.contains(string)) {
-                return false;
-            }
-        }
-        return true;
-    }
+//    private boolean isSubsetOf(Collection<String> subset,
+//                               Collection<String> superset) {
+//        for (String string : subset) {
+//            if (!superset.contains(string)) {
+//                return false;
+//            }
+//        }
+//        return true;
+//    }
 
     @Override
     public void onSaveInstanceState(Bundle savedState) {
