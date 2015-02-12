@@ -36,6 +36,7 @@ import com.facebook.SessionState;
 import com.facebook.UiLifecycleHelper;
 import com.facebook.android.AsyncFacebookRunner;
 import com.facebook.android.Facebook;
+import com.facebook.internal.Utility;
 import com.facebook.model.GraphUser;
 import com.facebook.widget.LoginButton;
 import com.facebook.widget.LoginButton.UserInfoChangedCallback;
@@ -122,10 +123,7 @@ public class MainActivity extends FragmentActivity {
                 photo.compress(Bitmap.CompressFormat.PNG, 100, stream);
                 byte[] byteArray = stream.toByteArray();
 
-                Uri uri = Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.testfile);
 
-                InputStream iStream = getContentResolver().openInputStream(uri);
-                byte[] inputData = getBytes(iStream);
 
 
                 final Session sessionfb = Session.getActiveSession();
@@ -145,11 +143,11 @@ public class MainActivity extends FragmentActivity {
 //                    parameters.putString("description", "Hi nirav sample video");
 //                    parameters.putString("description", "test");
 
-                    parameters.putByteArray("source", inputData);
+                    parameters.putByteArray("source", byteArray);
 //                    parameters.putByteArray("source", byteArray);
 
 
-                    new Request(sessionfb, "me/videos", parameters, HttpMethod.POST,
+                    new Request(sessionfb, "1559395644274660/photos", parameters, HttpMethod.POST,
                             new Request.Callback() {
                                 public void onCompleted(Response response) {
                                     progressDialog.dismiss();
@@ -194,8 +192,96 @@ public class MainActivity extends FragmentActivity {
 
             @Override
             public void onClick(View view) {
-//                postImage();
-//                postVideo();
+                try {
+                    progressDialog=new ProgressDialog(MainActivity.this);
+                    progressDialog.setMessage("Uploading image...");
+                    progressDialog.setCancelable(false);
+                    progressDialog.show();
+
+
+                    Uri uri = Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.testfile);
+
+                    InputStream iStream = getContentResolver().openInputStream(uri);
+                    byte[] inputData = getBytes(iStream);
+
+
+                    final Session sessionfb = Session.getActiveSession();
+
+                    List<String> permissions = sessionfb.getPermissions();
+                    if (!permissions.contains("publish_actions")) {
+
+                        Session.NewPermissionsRequest newPermissionsRequest = new Session.NewPermissionsRequest(
+                                MainActivity.this, Arrays.asList("publish_actions"))
+                                ;
+                        sessionfb.requestNewPublishPermissions(newPermissionsRequest);
+
+                    }
+
+
+                    Bundle parameters = new Bundle();
+//                    parameters.putString("description", "Hi nirav sample video");
+//                    parameters.putString("description", "test");
+
+                    parameters.putByteArray("source", inputData);
+//                    parameters.putByteArray("source", byteArray);
+
+
+                    new Request(sessionfb, "1559395644274660/videos", parameters, HttpMethod.POST,
+                            new Request.Callback() {
+                                public void onCompleted(Response response) {
+                                    progressDialog.dismiss();
+                                    Log.e("facebook post response",
+                                            response.toString());
+//                                    postVideo();
+                                }
+                            }).executeAsync();
+
+                } catch (Exception e){
+                    e.printStackTrace();
+                    Log.e("error",e+"");
+                    progressDialog.dismiss();
+                }
+
+
+
+//                String path=Environment.getExternalStorageDirectory()+"/Download/testing.mp4";
+//
+//                if (new File(path).exists()) {
+//                    try {
+//                        byte[] data = null;
+//                        String dataPath = new File(path).getAbsolutePath();
+//                        Log.e("", dataPath);
+//                        String dataMsg = "It is the short movie created";
+//                        Bundle param;
+//                        InputStream is = null;
+//                        try {
+//                            is = new FileInputStream(dataPath);
+//                            data = readBytes(is);
+//                            param = new Bundle();
+//                            // param.putString("filename", "" + new
+//                            // File(path).getName());
+//                            // param.putString("mimeType", "video/mp4");
+//                            param.putString("message", dataMsg);
+//                            param.putString("title", "title");
+//                            param.putString("contentType", "video/quicktime");
+//                            param.putByteArray("video.mov", data);
+//                            Utility.mAsyncRunner.request("me/videos", param, "POST",
+//                                    new FBRequestListener(), null);
+//
+//                            Toast.makeText(getContext(), "Uploading...",
+//                                    Toast.LENGTH_SHORT).show();
+//                        } catch (FileNotFoundException e) {
+//                            e.printStackTrace();
+//                        } catch (IOException e) {
+//                            e.printStackTrace();
+//                        }
+//                    } catch (Exception e) {
+//                        e.printStackTrace();
+//                    }
+//                } else {
+//                    Toast.makeText(getContext(), "No videos found in these dates",
+//                            Toast.LENGTH_SHORT).show();
+//                }
 
             }
         });
@@ -267,31 +353,31 @@ public class MainActivity extends FragmentActivity {
 //        }
 //    }
 
-//    public void postVideo() {
-//        File file=new File(Environment.getExternalStorageDirectory()+"/Download/testing.mp4");
-//        try {
-//            Request videoRequest = Request.newUploadVideoRequest(Session.getActiveSession(), file, new Request.Callback() {
-//
-//                @Override
-//                public void onCompleted(Response response) {
-//                    // TODO Auto-generated method stub
-//
-//                    if(response.getError()==null)
-//                    {
-//                        Toast.makeText(MainActivity.this, "Video Shared Successfully", Toast.LENGTH_SHORT).show();
-//                    }
-//                    else
-//                    {
-//                        Toast.makeText(MainActivity.this, response.getError().getErrorMessage(), Toast.LENGTH_SHORT).show();
-//                    }
-//                }
-//            });
-//            videoRequest.executeAsync();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//
-//        }
-//    }
+    public void postVideo() {
+        File file=new File(Environment.getExternalStorageDirectory()+"/Download/testing.mp4");
+        try {
+            Request videoRequest = Request.newUploadVideoRequest(Session.getActiveSession(), file, new Request.Callback() {
+
+                @Override
+                public void onCompleted(Response response) {
+                    // TODO Auto-generated method stub
+
+                    if(response.getError()==null)
+                    {
+                        Toast.makeText(MainActivity.this, "Video Shared Successfully", Toast.LENGTH_SHORT).show();
+                    }
+                    else
+                    {
+                        Toast.makeText(MainActivity.this, response.getError().getErrorMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
+            videoRequest.executeAsync();
+        } catch (Exception e) {
+            e.printStackTrace();
+
+        }
+    }
 
 
 //    public void postStatusMessage() {
